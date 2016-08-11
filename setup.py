@@ -63,6 +63,7 @@ pkgs = ['viscid',
         'viscid.cython',
         'viscid.compat',
         'viscid.compat.futures',
+        'viscid.nb_tools',
         'viscid.plot',
         'viscid.readers'
        ]

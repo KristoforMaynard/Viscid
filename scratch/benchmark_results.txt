@@ -1,28 +1,44 @@
 interp_nearest
 --------------
+Compiling Numba interp_nearest
+Compilation took 3.37 sec
 Timing interp_nearest
 <function viscid.cython.cycalc.interp_nearest> stats (10 runs):
-  Min: 0.0589, Mean: 0.0716, Median: 0.0646, Max: 0.101
-Cython Min: 0.0589203489944
+  Min: 0.059, Mean: 0.065, Median: 0.0663, Max: 0.0685
+<function viscid.nb_tools.nbcalc.nb_interp_nearest> stats (10 runs):
+  Min: 0.206, Mean: 0.212, Median: 0.211, Max: 0.22
+@ Numba is 3.50x slower than Cython
 
 interp_trilin
 -------------
+Compiling Numba interp_trilin
+Compilation took 1.1 sec
 Timing interp_trilin
 <function fort_tools.fort_shims.fort_interp_trilin> stats (10 runs):
-  Min: 0.0463, Mean: 0.0547, Median: 0.0531, Max: 0.0772
+  Min: 0.0674, Mean: 0.0723, Median: 0.072, Max: 0.0766
 <function viscid.cython.cycalc.interp_trilin> stats (10 runs):
-  Min: 0.0695, Mean: 0.073, Median: 0.0734, Max: 0.075
-@ Cython is 1.50x slower than Fortran
+  Min: 0.0698, Mean: 0.0733, Median: 0.0729, Max: 0.0786
+<function viscid.nb_tools.nbcalc.nb_interp_trilin> stats (10 runs):
+  Min: 0.178, Mean: 0.185, Median: 0.183, Max: 0.192
+@ Cython is 1.04x slower than Fortran
+@ Numba is 2.64x slower than Fortran
 
 streamline
 ----------
+Compiling Numba streamline
+Compilation took 1.37 sec
 Timing streamline
 <function fort_tools.fort_shims.fort_topology> stats (6 runs):
-  Min: 0.321, Mean: 0.329, Median: 0.328, Max: 0.337
+  Min: 0.4, Mean: 0.407, Median: 0.407, Max: 0.414
 <function viscid.cython.streamline.calc_streamlines> stats (6 runs):
-  Min: 0.473, Mean: 0.486, Median: 0.48, Max: 0.52
+  Min: 0.592, Mean: 0.608, Median: 0.607, Max: 0.622
+<function viscid.nb_tools.nbstreamline.nb_calc_streamlines> stats (6 runs):
+  Min: 2.62, Mean: 2.68, Median: 2.68, Max: 2.71
 Segs Fortran 2687658
 Segs Cython  2687934
-Fortran took 1.19e-07 sec/seg
-Cython took 1.76e-07 sec/seg
-@ Cython is 1.47x slower than Fortran
+Segs Numba  2687934
+Fortran took 1.49e-07 sec/seg
+Cython took 2.2e-07 sec/seg
+Numba took 9.75e-07 sec/seg
+@ Cython is 1.48x slower than Fortran
+@ Numba is 6.54x slower than Fortran

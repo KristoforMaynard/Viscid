@@ -83,13 +83,28 @@ def benchmark_interp_nearest(precompile=True, profile=True):
 
     f0, seeds = make_scalar_fld()
 
+    if precompile:
+        print("Compiling Numba", which)
+        stats = dict()
+        viscid.timeit(viscid.nb_interp_nearest, f0, seeds, timeit_repeat=2,
+                      timeit_stats=stats, timeit_quiet=True)
+        print("Compilation took {0:.3g} sec".format(stats['max'] - stats['min']))
+
+    if profile:
+        print("Profiling", which)
+        cProfile.runctx('viscid.nb_interp_nearest(f0, seeds)', globals(), locals(),
+                        filename='interp_nearest.prof')
+
     print("Timing", which)
-    cy_stats = dict()
+    cy_stats, nb_stats = dict(), dict()
     retCY = viscid.timeit(viscid.interp_nearest, f0, seeds,
                           timeit_repeat=10, timeit_stats=cy_stats)
-    print("Cython Min:", cy_stats['min'])
+    retNB = viscid.timeit(viscid.nb_interp_nearest, f0, seeds,
+                          timeit_repeat=10, timeit_stats=nb_stats)
+    print_seedup("Numba", nb_stats['min'], "Cython", cy_stats['min'], prefix="@ ")
 
     assert np.all(f0.data == retCY.data)
+    assert np.all(f0.data == retNB.data)
 
 def benchmark_interp_trilin(precompile=True, profile=True):
     which = "interp_trilin"
@@ -98,14 +113,30 @@ def benchmark_interp_trilin(precompile=True, profile=True):
 
     f0, seeds = make_scalar_fld()
 
+    if precompile:
+        print("Compiling Numba", which)
+        stats = dict()
+        viscid.timeit(viscid.nb_interp_trilin, f0, seeds, timeit_repeat=2,
+                      timeit_stats=stats, timeit_quiet=True)
+        print("Compilation took {0:.3g} sec".format(stats['max'] - stats['min']))
+
+    if profile:
+        print("Profiling", which)
+        cProfile.runctx('viscid.nb_interp_trilin(f0, seeds)', globals(), locals(),
+                        filename='interp_trilin.prof')
+
     print("Timing", which)
-    ft_stats, cy_stats = dict(), dict()
+    ft_stats, cy_stats, nb_stats = dict(), dict(), dict()
     retFT = viscid.timeit(fort_interp_trilin, f0, seeds,
                           timeit_repeat=10, timeit_stats=ft_stats)
     retCY = viscid.timeit(viscid.interp_trilin, f0, seeds,
                           timeit_repeat=10, timeit_stats=cy_stats)
+    retNB = viscid.timeit(viscid.nb_interp_trilin, f0, seeds,
+                          timeit_repeat=10, timeit_stats=nb_stats)
     print_seedup("Cython", cy_stats['min'], "Fortran", ft_stats['min'], prefix="@ ")
+    print_seedup("Numba", nb_stats['min'], "Fortran", ft_stats['min'], prefix="@ ")
 
+    assert np.all(retCY.data == retNB.data)
     assert np.allclose(retCY.data, retFT.data)
 
 def benchmark_streamline(precompile=True, profile=True, scale=True, plot=True):
@@ -115,14 +146,32 @@ def benchmark_streamline(precompile=True, profile=True, scale=True, plot=True):
 
     f0, seeds = make_vector_fld()
 
+    if precompile:
+        print("Compiling Numba", which)
+        _seeds = viscid.Sphere(r=10.0, nphi=2, ntheta=2)
+        stats = dict()
+        viscid.timeit(viscid.nb_calc_streamlines, f0, _seeds, timeit_repeat=2,
+                      timeit_stats=stats, timeit_quiet=True, ibound=3.7, maxit=3,
+                      topo_style='generic')
+        # print(">>LINES>>")
+        # print(_l)
+        # print("<<LINES<<")
+        print("Compilation took {0:.3g} sec".format(stats['max'] - stats['min']))
+
+    if profile:
+        print("Profiling", which)
+
     print("Timing", which)
 
     sl_kwargs = dict(ibound=3.7, ds0=0.020)
     lines, _ = viscid.streamlines(f0, seeds, **sl_kwargs)
     nsegs_cython = np.sum([line.shape[1] for line in lines])
     lines = None
+    lines, _ = viscid.nb_calc_streamlines(f0, seeds, **sl_kwargs)
+    nsegs_numba = np.sum([line.shape[1] for line in lines])
+    lines = None
 
-    ft_stats, cy_stats = dict(), dict()
+    ft_stats, cy_stats, nb_stats = dict(), dict(), dict()
     bench_output_type = viscid.OUTPUT_TOPOLOGY
     sl_kwargs.update(output=bench_output_type)
 
@@ -130,25 +179,37 @@ def benchmark_streamline(precompile=True, profile=True, scale=True, plot=True):
                           timeit_stats=ft_stats)
     _, retCY = viscid.timeit(viscid.streamlines, f0, seeds, timeit_repeat=6,
                              timeit_stats=cy_stats, **sl_kwargs)
+    _, retNB = viscid.timeit(viscid.nb_calc_streamlines, f0, seeds, timeit_repeat=6,
+                             timeit_stats=nb_stats, **sl_kwargs)
 
     fort_per_seg = ft_stats['min'] / retFT.get_info('nsegs')
     cy_per_seg = cy_stats['min'] / nsegs_cython
+    nb_per_seg = nb_stats['min'] / nsegs_numba
 
     print("Segs Fortran", retFT.get_info('nsegs'))
     print("Segs Cython ", nsegs_cython)
+    print("Segs Numba ", nsegs_numba)
 
     print("Fortran took {0:.3g} sec/seg".format(fort_per_seg))
     print("Cython took {0:.3g} sec/seg".format(cy_per_seg))
+    print("Numba took {0:.3g} sec/seg".format(nb_per_seg))
     print_seedup("Cython", cy_per_seg, "Fortran", fort_per_seg, prefix="@ ")
+    print_seedup("Numba", nb_per_seg, "Fortran", fort_per_seg, prefix="@ ")
 
     if plot:
         from viscid.plot import mpl
         mpl.clf()
-        mpl.subplot(121, projection='polar')
+        mpl.subplot(221, projection='polar')
+        mpl.plot(retNB, hemisphere='north')
+        mpl.subplot(222, projection='polar')
+        mpl.plot(retNB, hemisphere='south')
+        mpl.subplot(223, projection='polar')
         mpl.plot(retCY, hemisphere='north')
-        mpl.subplot(122, projection='polar')
+        mpl.subplot(224, projection='polar')
         mpl.plot(retCY, hemisphere='south')
         mpl.show()
+
+    assert np.all(retCY.data == retNB.data)
 
     if scale:
         thetas = np.logspace(np.log10(3), np.log10(144), 8).astype('i')
@@ -157,6 +218,8 @@ def benchmark_streamline(precompile=True, profile=True, scale=True, plot=True):
         fort_nsegs = [None] * len(thetas)
         cy_mintime = [None] * len(thetas)
         fort_mintime = [None] * len(thetas)
+        nb_nsegs = [None] * len(thetas)
+        nb_mintime = [None] * len(thetas)
 
         for i, ntheta in enumerate(thetas):
             seeds = viscid.Sphere(r=10.0, ntheta=ntheta, nphi=32)
@@ -175,8 +238,17 @@ def benchmark_streamline(precompile=True, profile=True, scale=True, plot=True):
             cy_nsegs[i] = np.sum([line.shape[1] for line in lines])
             cy_mintime[i] = _stats['min']
 
+            _, topo = viscid.timeit(viscid.nb_calc_streamlines, f0, seeds,
+                                    ibound=3.7, ds0=0.020, output=bench_output_type,
+                                    timeit_repeat=5, timeit_stats=_stats,
+                                    timeit_quiet=True)
+            lines, _ = viscid.nb_calc_streamlines(f0, seeds, ibound=3.7, ds0=0.020)
+            nb_nsegs[i] = np.sum([line.shape[1] for line in lines])
+            nb_mintime[i] = _stats['min']
+
         from viscid.plot import mpl
         mpl.clf()
+        mpl.plt.plot(nb_nsegs, nb_mintime, label="Numba")
         mpl.plt.plot(cy_nsegs, cy_mintime, label="Cython")
         mpl.plt.plot(fort_nsegs, fort_mintime, label="Fortran")
         mpl.plt.legend(loc=0)
@@ -185,8 +257,10 @@ def benchmark_streamline(precompile=True, profile=True, scale=True, plot=True):
         mpl.show()
 
         mpl.clf()
+        nb_tperseg = np.array(nb_mintime) / np.array(nb_nsegs)
         cy_tperseg = np.array(cy_mintime) / np.array(cy_nsegs)
         fort_tperseg = np.array(fort_mintime) / np.array(fort_nsegs)
+        mpl.plt.plot(thetas, nb_tperseg / fort_tperseg, label="over numba")
         mpl.plt.plot(thetas, cy_tperseg / fort_tperseg, label="over cython")
         mpl.plt.xlabel('ntheta')
         mpl.plt.ylabel('Fortran Speedup')

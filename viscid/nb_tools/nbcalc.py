@@ -9,6 +9,7 @@ import numpy as np
 import numba as nb
 
 import viscid
+from viscid.nb_tools.nbfield import make_nb_field
 
 
 __all__ = ["nb_interp", "nb_interp_trilin", "nb_interp_nearest",
@@ -33,7 +34,7 @@ def nb_interp(vfield, seeds, kind="nearest", wrap=True):
     """Interpolate vfield onto seeds using Numba"""
     kind = kind.strip().lower()
 
-    nb_fld = viscid.make_nb_field(vfield)
+    nb_fld = make_nb_field(vfield)
 
     seed_center = seeds.center if hasattr(seeds, 'center') else vfield.center
     if seed_center.lower() in ('face', 'edge'):
@@ -75,7 +76,7 @@ def nb_interp(vfield, seeds, kind="nearest", wrap=True):
     return result
 
 
-@nb.jit(nopython=True, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
+@nb.njit(fastmath=False, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
 def _nb_interp_trilin(nb_fld, points, result):
     cached_idx3 = np.zeros((3,), dtype=np.int_)
 
@@ -84,7 +85,7 @@ def _nb_interp_trilin(nb_fld, points, result):
             result[i, m] = nb_interp_trilin_x(nb_fld, m, points[i, :],
                                               cached_idx3)
 
-@nb.jit(nopython=True, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
+@nb.njit(fastmath=False, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
 def nb_interp_trilin_x(nb_fld, m, x, cached_idx3):
     """Numba trilinear interpolate at a single point"""
     ix = nb_fld.temp_int3_0
@@ -130,7 +131,7 @@ def nb_interp_trilin_x(nb_fld, m, x, cached_idx3):
     return c
 
 
-@nb.jit(nopython=True, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
+@nb.njit(fastmath=False, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
 def _nb_interp_nearest(nb_fld, points, result):
     cached_idx3 = np.zeros((3,), dtype=np.int_)
 
@@ -139,7 +140,7 @@ def _nb_interp_nearest(nb_fld, points, result):
             result[i, m] = nb_interp_nearest_x(nb_fld, m, points[i, :],
                                                cached_idx3)
 
-@nb.jit(nopython=True, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
+@nb.njit(fastmath=False, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
 def nb_interp_nearest_x(nb_fld, m, x, cached_idx3):
     """Numba nearest neighbor interpolate at a single point"""
     ind0 = nb_closest_ind(nb_fld, m, 0, x[0], cached_idx3)
@@ -148,7 +149,7 @@ def nb_interp_nearest_x(nb_fld, m, x, cached_idx3):
     return nb_fld.data[ind0, ind1, ind2, m]
 
 
-@nb.jit(nopython=True, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
+@nb.njit(fastmath=False, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
 def nb_closest_preceeding_ind(nb_fld, m, d, value, cached_idx3):
     """Find closest preceeding index of nb_fld.crds[m, d, ?] to value"""
     n = nb_fld.n[d]
@@ -168,7 +169,7 @@ def nb_closest_preceeding_ind(nb_fld, m, d, value, cached_idx3):
                 if nb_fld.crds[m, d, i + 1] > value:
                     found_ind = 1
                     break
-            if not found_ind:
+            if found_ind == 0:
                 i = n - 1
         else:
             i = startidx - 1
@@ -176,14 +177,14 @@ def nb_closest_preceeding_ind(nb_fld, m, d, value, cached_idx3):
                 if nb_fld.crds[m, d, i] <= value:
                     found_ind = 1
                     break
-            if not found_ind:
+            if found_ind == 0:
                 i = 0
         ind = i
 
     cached_idx3[d] = ind
     return ind
 
-@nb.jit(nopython=True, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
+@nb.njit(fastmath=False, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
 def nb_closest_ind(nb_fld, m, d, value, cached_idx3):
     """Find closest index of nb_fld.crds[m, d, ?] to value"""
     preceeding_ind = nb_closest_preceeding_ind(nb_fld, m, d, value, cached_idx3)

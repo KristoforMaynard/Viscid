@@ -10,6 +10,9 @@ import tempfile
 import numpy as np
 import viscid
 
+from viscid.nb_tools.nbcalc import nb_interp_nearest, nb_interp_trilin
+from viscid.nb_tools.nbstreamline import nb_calc_streamlines
+
 
 # os.environ['NUMBA_NUM_THREADS'] = "2"
 # os.environ['NUMBA_WARNINGS'] = "1"
@@ -86,20 +89,20 @@ def benchmark_interp_nearest(precompile=True, profile=True):
     if precompile:
         print("Compiling Numba", which)
         stats = dict()
-        viscid.timeit(viscid.nb_interp_nearest, f0, seeds, timeit_repeat=2,
+        viscid.timeit(nb_interp_nearest, f0, seeds, timeit_repeat=2,
                       timeit_stats=stats, timeit_quiet=True)
         print("Compilation took {0:.3g} sec".format(stats['max'] - stats['min']))
 
     if profile:
         print("Profiling", which)
-        cProfile.runctx('viscid.nb_interp_nearest(f0, seeds)', globals(), locals(),
+        cProfile.runctx('nb_interp_nearest(f0, seeds)', globals(), locals(),
                         filename='interp_nearest.prof')
 
     print("Timing", which)
     cy_stats, nb_stats = dict(), dict()
     retCY = viscid.timeit(viscid.interp_nearest, f0, seeds,
                           timeit_repeat=10, timeit_stats=cy_stats)
-    retNB = viscid.timeit(viscid.nb_interp_nearest, f0, seeds,
+    retNB = viscid.timeit(nb_interp_nearest, f0, seeds,
                           timeit_repeat=10, timeit_stats=nb_stats)
     print_seedup("Numba", nb_stats['min'], "Cython", cy_stats['min'], prefix="@ ")
 
@@ -116,13 +119,13 @@ def benchmark_interp_trilin(precompile=True, profile=True):
     if precompile:
         print("Compiling Numba", which)
         stats = dict()
-        viscid.timeit(viscid.nb_interp_trilin, f0, seeds, timeit_repeat=2,
+        viscid.timeit(nb_interp_trilin, f0, seeds, timeit_repeat=2,
                       timeit_stats=stats, timeit_quiet=True)
         print("Compilation took {0:.3g} sec".format(stats['max'] - stats['min']))
 
     if profile:
         print("Profiling", which)
-        cProfile.runctx('viscid.nb_interp_trilin(f0, seeds)', globals(), locals(),
+        cProfile.runctx('nb_interp_trilin(f0, seeds)', globals(), locals(),
                         filename='interp_trilin.prof')
 
     print("Timing", which)
@@ -131,7 +134,7 @@ def benchmark_interp_trilin(precompile=True, profile=True):
                           timeit_repeat=10, timeit_stats=ft_stats)
     retCY = viscid.timeit(viscid.interp_trilin, f0, seeds,
                           timeit_repeat=10, timeit_stats=cy_stats)
-    retNB = viscid.timeit(viscid.nb_interp_trilin, f0, seeds,
+    retNB = viscid.timeit(nb_interp_trilin, f0, seeds,
                           timeit_repeat=10, timeit_stats=nb_stats)
     print_seedup("Cython", cy_stats['min'], "Fortran", ft_stats['min'], prefix="@ ")
     print_seedup("Numba", nb_stats['min'], "Fortran", ft_stats['min'], prefix="@ ")
@@ -150,7 +153,7 @@ def benchmark_streamline(precompile=True, profile=True, scale=True, plot=True):
         print("Compiling Numba", which)
         _seeds = viscid.Sphere(r=10.0, nphi=2, ntheta=2)
         stats = dict()
-        viscid.timeit(viscid.nb_calc_streamlines, f0, _seeds, timeit_repeat=2,
+        viscid.timeit(nb_calc_streamlines, f0, _seeds, timeit_repeat=2,
                       timeit_stats=stats, timeit_quiet=True, ibound=3.7, maxit=3,
                       topo_style='generic')
         # print(">>LINES>>")
@@ -167,7 +170,7 @@ def benchmark_streamline(precompile=True, profile=True, scale=True, plot=True):
     lines, _ = viscid.streamlines(f0, seeds, **sl_kwargs)
     nsegs_cython = np.sum([line.shape[1] for line in lines])
     lines = None
-    lines, _ = viscid.nb_calc_streamlines(f0, seeds, **sl_kwargs)
+    lines, _ = nb_calc_streamlines(f0, seeds, **sl_kwargs)
     nsegs_numba = np.sum([line.shape[1] for line in lines])
     lines = None
 
@@ -179,7 +182,7 @@ def benchmark_streamline(precompile=True, profile=True, scale=True, plot=True):
                           timeit_stats=ft_stats)
     _, retCY = viscid.timeit(viscid.streamlines, f0, seeds, timeit_repeat=6,
                              timeit_stats=cy_stats, **sl_kwargs)
-    _, retNB = viscid.timeit(viscid.nb_calc_streamlines, f0, seeds, timeit_repeat=6,
+    _, retNB = viscid.timeit(nb_calc_streamlines, f0, seeds, timeit_repeat=6,
                              timeit_stats=nb_stats, **sl_kwargs)
 
     fort_per_seg = ft_stats['min'] / retFT.get_info('nsegs')
@@ -238,11 +241,11 @@ def benchmark_streamline(precompile=True, profile=True, scale=True, plot=True):
             cy_nsegs[i] = np.sum([line.shape[1] for line in lines])
             cy_mintime[i] = _stats['min']
 
-            _, topo = viscid.timeit(viscid.nb_calc_streamlines, f0, seeds,
+            _, topo = viscid.timeit(nb_calc_streamlines, f0, seeds,
                                     ibound=3.7, ds0=0.020, output=bench_output_type,
                                     timeit_repeat=5, timeit_stats=_stats,
                                     timeit_quiet=True)
-            lines, _ = viscid.nb_calc_streamlines(f0, seeds, ibound=3.7, ds0=0.020)
+            lines, _ = nb_calc_streamlines(f0, seeds, ibound=3.7, ds0=0.020)
             nb_nsegs[i] = np.sum([line.shape[1] for line in lines])
             nb_mintime[i] = _stats['min']
 

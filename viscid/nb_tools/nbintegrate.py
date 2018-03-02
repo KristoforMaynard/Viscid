@@ -24,7 +24,7 @@ _NUMBA_NOGIL = True
 _NUMBA_CACHE = False
 
 
-@nb.jit(nopython=True, nogil=False, cache=_NUMBA_CACHE)
+@nb.njit(fastmath=False, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
 def nb_euler1(nb_fld, x, ds, tol_lo, tol_hi, fac_refine, fac_coarsen,
               smallest_step, largest_step, vscale, cached_idx3):
     """1st order Euler integration step"""
@@ -41,7 +41,7 @@ def nb_euler1(nb_fld, x, ds, tol_lo, tol_hi, fac_refine, fac_coarsen,
     x[2] += ds[0] * v2 / vmag
     return 0
 
-@nb.jit(nopython=True, nogil=False, cache=_NUMBA_CACHE)
+@nb.njit(fastmath=False, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
 def nb_euler1a(nb_fld, x, ds, tol_lo, tol_hi, fac_refine, fac_coarsen,
                smallest_step, largest_step, vscale, cached_idx3):
     """Adaptive 1st order Euler integration step

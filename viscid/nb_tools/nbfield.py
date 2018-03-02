@@ -146,9 +146,9 @@ def make_nb_field(vfield):
     sshape_nc_max = max(sshape_nc)
     sshape_cc_max = max(sshape_cc)
 
-    nb_fld.crds = np.nan * np.empty((3, 3, sshape_max), dtype=crd_dtype)
-    nb_fld.crds_nc = np.nan * np.empty((3, sshape_nc_max), dtype=crd_dtype)
-    nb_fld.crds_cc = np.nan * np.empty((3, sshape_cc_max), dtype=crd_dtype)
+    nb_fld.crds = np.full((3, 3, sshape_max), np.nan, dtype=crd_dtype)
+    nb_fld.crds_nc = np.full((3, sshape_nc_max), np.nan, dtype=crd_dtype)
+    nb_fld.crds_cc = np.full((3, sshape_cc_max), np.nan, dtype=crd_dtype)
 
     nb_fld.nr_nodes = np.zeros((3,), dtype='int')
     nb_fld.nr_cells = np.zeros((3,), dtype='int')
@@ -156,22 +156,22 @@ def make_nb_field(vfield):
     nb_fld.nm1 = np.zeros((3,), dtype='int')
     nb_fld.nm2 = np.zeros((3,), dtype='int')
 
-    nb_fld.xl = np.nan * np.empty((3, 3), dtype=crd_dtype)
-    nb_fld.xh = np.nan * np.empty((3, 3), dtype=crd_dtype)
-    nb_fld.L = np.nan * np.empty((3, 3), dtype=crd_dtype)
-    nb_fld.dx = np.nan * np.empty((3,), dtype=crd_dtype)
+    nb_fld.xl = np.full((3, 3), np.nan, dtype=crd_dtype)
+    nb_fld.xh = np.full((3, 3), np.nan, dtype=crd_dtype)
+    nb_fld.L = np.full((3, 3), np.nan, dtype=crd_dtype)
+    nb_fld.dx = np.full((3,), np.nan, dtype=crd_dtype)
 
-    nb_fld.xlnc = np.nan * np.empty((3,), dtype=crd_dtype)
-    nb_fld.xhnc = np.nan * np.empty((3,), dtype=crd_dtype)
-    nb_fld.xlcc = np.nan * np.empty((3,), dtype=crd_dtype)
-    nb_fld.xhcc = np.nan * np.empty((3,), dtype=crd_dtype)
+    nb_fld.xlnc = np.full((3,), np.nan, dtype=crd_dtype)
+    nb_fld.xhnc = np.full((3,), np.nan, dtype=crd_dtype)
+    nb_fld.xlcc = np.full((3,), np.nan, dtype=crd_dtype)
+    nb_fld.xhcc = np.full((3,), np.nan, dtype=crd_dtype)
 
     nb_fld.temp_int3_0 = 99999999 * np.ones((3,), dtype="int")
     nb_fld.temp_int3_1 = 99999999 * np.ones((3,), dtype="int")
     nb_fld.temp_int3_2 = 99999999 * np.ones((3,), dtype="int")
-    nb_fld.temp_float3_0 = np.nan * np.empty((3,), dtype=crd_dtype)
-    nb_fld.temp_float3_1 = np.nan * np.empty((3,), dtype=crd_dtype)
-    nb_fld.temp_float3_2 = np.nan * np.empty((3,), dtype=crd_dtype)
+    nb_fld.temp_float3_0 = np.full((3,), np.nan, dtype=crd_dtype)
+    nb_fld.temp_float3_1 = np.full((3,), np.nan, dtype=crd_dtype)
+    nb_fld.temp_float3_2 = np.full((3,), np.nan, dtype=crd_dtype)
 
     x, y, z = vfield.get_crds_vector()
     _crd_lst = [[_x, _y, _z] for _x, _y, _z in zip(x, y, z)]

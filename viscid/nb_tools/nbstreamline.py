@@ -15,6 +15,7 @@ import numba as nb
 
 import viscid
 from viscid.nb_tools import nbintegrate
+from viscid.nb_tools.nbfield import make_nb_field
 
 
 __all__ = ["nb_calc_streamlines"]
@@ -98,7 +99,7 @@ def nb_calc_streamlines(vfield, seeds, nr_procs=1, force_subprocess=False,
     """Calculate streamlines using Numba"""
     if vfield.nr_sdims != 3 or vfield.nr_comps != 3:
         raise ValueError("Streamlines are only written in 3D.")
-    nb_fld = viscid.make_nb_field(vfield)
+    nb_fld = make_nb_field(vfield)
 
     seed_center = seeds.center if hasattr(seeds, 'center') else vfield.center
     if seed_center.lower() in ('face', 'edge'):
@@ -189,7 +190,7 @@ def _nb_streamline_shim(nb_fld, seeds, ds0=0.0, ibound=0.0, obound0=None,
                           tol_hi, fac_refine, fac_coarsen, smallest_step,
                           largest_step, topo_style, vscale)
 
-# @nb.jit(nopython=False, nogil=False, cache=_NUMBA_CACHE)
+@nb.jit(nopython=False, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
 def _nb_streamline(nb_fld, seeds, ds0, ibound, obound0, obound1, stream_dir,
                    output, method, maxit, max_length, tol_lo, tol_hi, fac_refine,
                    fac_coarsen, smallest_step, largest_step, topo_style, vscale):
@@ -247,7 +248,7 @@ def _nb_streamline(nb_fld, seeds, ds0, ibound, obound0, obound1, stream_dir,
 
     return lines, topology_ndarr
 
-@nb.jit(nopython=True, nogil=False, cache=_NUMBA_CACHE)
+@nb.njit(fastmath=False, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
 def _nb_streamline_single(nb_fld, ds0, ibound, obound0, obound1, stream_dir,
                           output, method, maxit2, max_length, tol_lo, tol_hi, fac_refine,
                           fac_coarsen, smallest_step, largest_step, vscale,
@@ -322,7 +323,7 @@ def _nb_streamline_single(nb_fld, ds0, ibound, obound0, obound1, stream_dir,
         end_flags |= done
     return end_flags
 
-@nb.jit(nopython=True, nogil=False, cache=_NUMBA_CACHE)
+@nb.njit(fastmath=False, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
 def classify_endpoint(pt, length, ibound, obound0, obound1, max_length, ds, pt0):
     done = END_NONE
     rsq = pt[0]**2 + pt[1]**2 + pt[2]**2
@@ -358,7 +359,7 @@ def classify_endpoint(pt, length, ibound, obound0, obound1, max_length, ds, pt0)
 
     return done
 
-@nb.jit(nopython=True, nogil=False, cache=_NUMBA_CACHE)
+@nb.njit(fastmath=False, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
 def end_flags_to_topology_msphere(end_flags):
     topo = 0
     mask_open_north = END_IBOUND_NORTH | END_OBOUND
@@ -382,7 +383,7 @@ def end_flags_to_topology_msphere(end_flags):
 
     return topo
 
-@nb.jit(nopython=True, nogil=False, cache=_NUMBA_CACHE)
+@nb.njit(fastmath=False, nogil=_NUMBA_NOGIL, cache=_NUMBA_CACHE)
 def end_flags_to_topology_generic(end_flags):
     return end_flags
 
